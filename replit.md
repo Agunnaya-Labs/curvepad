@@ -25,3 +25,34 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+
+## CurvePad — Bonding Curve Token Launchpad
+
+### What it is
+CurvePad is a permissionless bonding curve token launchpad on Base mainnet. Anyone can deploy an ERC-20 token in one transaction; price is determined by a linear bonding curve, not market makers.
+
+### Architecture
+- **Frontend**: React + Vite at `artifacts/curvepad/` (served at `/`)
+- **Blockchain**: Connects directly to Base mainnet via wagmi + viem (no backend needed)
+- **Web3 libs**: wagmi, viem, @rainbow-me/rainbowkit, @tanstack/react-query
+
+### Key Files
+- `artifacts/curvepad/src/lib/web3.ts` — ABI definitions, contract addresses, math utilities
+- `artifacts/curvepad/src/pages/ExplorePage.tsx` — token grid with search/sort
+- `artifacts/curvepad/src/pages/CreatePage.tsx` — deploy new token UI
+- `artifacts/curvepad/src/pages/TradePage.tsx` — per-token trade view with live chart
+- `artifacts/curvepad/src/components/BondingCurveChart.tsx` — Canvas-rendered live price chart
+- `artifacts/curvepad/src/components/ActivityFeed.tsx` — Live on-chain Trade event stream
+
+### Configuration
+After deploying the TokenFactory contract to Base mainnet, update:
+```typescript
+// artifacts/curvepad/src/lib/web3.ts
+export const FACTORY_ADDRESS = "0xYOUR_DEPLOYED_ADDRESS" as `0x${string}`;
+```
+
+### Bonding Curve Math
+- `price(supply) = BASE_PRICE + SLOPE × supply`
+- `reserve = BASE_PRICE × S + SLOPE × S² / 2`
+- Buy pricing: solves quadratic `(SLOPE/2)x² + Bx - reserve = 0`
+- 1% creator fee on every trade (from trader, not reserve)
